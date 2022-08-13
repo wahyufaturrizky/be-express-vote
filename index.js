@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { errorHandler, notFound } = require("./handlers");
+const routes = require("./routes");
 
 const db = require("./models");
 const app = express();
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.get("/", (req, res) => res.json({ helo: "hello world" }));
+app.use("/api/auth", routes.auth);
 
 app.use(notFound);
 app.use(errorHandler);
