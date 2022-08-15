@@ -81,12 +81,55 @@ exports.deletePoll = async (req, res, next) => {
       throw new Error("No poll found");
     }
 
-    if (poll.user !== userId) {
+    if (poll.user.toString() !== userId) {
       throw new Error("Unauthorized access");
     }
     await poll.remove();
 
     res.json({ message: "Success delete poll " + pollId });
+  } catch (error) {
+    error.status = 400;
+
+    next(error);
+  }
+};
+
+exports.vote = async (req, res, next) => {
+  try {
+    const { id: pollId } = req.params;
+    const { id: userId } = req.decoded;
+    const { answer } = req.body;
+
+    if (answer) {
+      const poll = await db.Poll.findById(pollId);
+
+      if (!poll) {
+        throw new Error("No poll found");
+      }
+
+      const vote = poll.options.map((option) => {
+        if (option.option === answer) {
+          console.log("@option", option);
+          return {
+            ...option,
+            votes: option.votes + 1,
+          };
+        } else {
+          return option;
+        }
+      });
+      console.log("@vote", vote);
+
+      if (poll.voted.filter((user) => user.toString() === userId).length <= 0) {
+        poll.voted.push(userId);
+        poll.options = vote;
+        await poll.save();
+
+        res.status(201).json({ poll, message: "success voted", success: true });
+      } else {
+        throw new Error("Already voted");
+      }
+    }
   } catch (error) {
     error.status = 400;
 
